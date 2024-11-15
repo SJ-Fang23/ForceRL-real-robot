@@ -23,16 +23,20 @@ On the computer connected to the UR5 arm, follow these steps:
 
 2. Launch the bringup launch file:
     ```bash
+    sudo chmod 777 /dev/ttyUSB0
     roslaunch turbo_bringup right_arm.launch
     ```
     You will see the gripper opening and closing, indicating a successful launch!
 
 ## Teaching Pendant Setup
 
+Load the driver so that the program can actually move the robot.
+
 1. On the main screen, click `Run Program`.
 2. Go to `File --> Load Program`.
 3. Select `ur_driver.urp` and click `Open`.
 4. Press `Play` (`▶` symbol).
+5. Press `continue` on the popup.
 
 Voila! We are done!
 
@@ -41,6 +45,13 @@ Voila! We are done!
 On the same computer connected to the UR5, follow these steps:
 
 1. Open a terminal and run the following commands:
+
+    ```bash
+    cd ~/catkin_ws
+    source devel/setup.bash
+    export ROS_IP=10.3.4.100
+    ```
+
     ```bash
     cd ~/catkin_ws/src/ForceRL_driver_bk/launch
     roslaunch realsense.launch
@@ -52,8 +63,17 @@ Now you have successfully launched all the drivers for the UR5 arm and sensors.
 
 To run FLEX, follow these steps on the computer connected to the UR5 arm:
 
+This is the drive that receives coordinate for grasping and actuate the grasping.
 
 1. Open a terminal and run:
+
+    
+    ```bash
+    cd ~/catkin_ws
+    source devel/setup.bash
+    export ROS_IP=10.3.4.100
+    ```
+
     ```bash
     rosrun forcerl_driver grasp_object_driver.py
     ```
@@ -62,9 +82,12 @@ To run FLEX, follow these steps on the computer connected to the UR5 arm:
 Now switch to the computer that can run the models for FLEX.
 
 ### On the Computer Running FLEX Models
+We use a different computer (let's call it the second computer) to run FLEX model because the computer connected to UR5 can't.
 
-1. In a terminal, run:
+1. In a terminal, run: 
     ```bash
+    cd projects/frl-real/ForceRL-real-robot
+    conda deactivate  # because ROS can't work well with conda
     source devel/setup.bash
     ```
 
@@ -81,16 +104,39 @@ Now switch to the computer that can run the models for FLEX.
     rosrun frl_rollout point_transform.py
     ```
 
-4. On another terminal, run:
+4. On another terminal, **repeat step 1 and 2**, then runaction:
     ```bash
     rosrun frl_rollout send_action.py
     ```
-    This will send the commands to be executed on the arm. Keep pressing `Enter` on both computers to successfully execute the actions.
+    This will send the commands to be executed on the arm.
+
+    The terminal with `send_action.py` runnning will show
+    ```Press Enter to send the action X```. Press `Enter` the send the target coordinate to the Master computer.
+
+    On the Master computer, once the `grasp_object_driver.py` receive the corrdinate, it will print `Go...`, press `Enter` to allow the actual movement.
+
+    Keep pressing `Enter` on both computers to successfully execute the actions.
 
 ## Running the Policy for Opening the Drawer
 
-1. In a new terminal, activate the conda environment:
+1. Open a terminal **on the Master computer**, and run:
+
+    
     ```bash
+    cd ~/catkin_ws
+    source devel/setup.bash
+    export ROS_IP=10.3.4.100
+    ```
+
+    ```bash
+    rosrun forcerl_driver policy_rollout_driver.py
+    ```
+    If you see something like "Ready to take commands for planning group...", you're good to go!
+
+
+1. In a new terminal on **the second computer**, activate the conda environment:
+    ```bash
+    cd projects/frl-real/ForceRL-real-robot
     conda activate frl
     ```
 
@@ -99,10 +145,9 @@ Now switch to the computer that can run the models for FLEX.
     python src/frl_rollout/scripts/policy_server.py
     ```
 
-> **Note:** Make sure you're in the directory `~/projects/frl-real/ForceRL-real-robot` to run the above code.
-
 3. On another terminal, deactivate conda:
     ```bash
+    cd projects/frl-real/ForceRL-real-robot
     conda deactivate
     ```
 
@@ -122,14 +167,15 @@ Now switch to the computer that can run the models for FLEX.
     rosrun frl_rollout rollout_policy.py
     ```
 
-This will send the commands to be executed on the arm. Keep pressing `Enter` on both computers to successfully execute the actions.
+This will send the commands to be executed on the arm. Keep pressing `Enter` on the Master computers to successfully execute the actions. Kill the running process on the master computer when you are done with opening the drawer. 
 
 
-OH MY GOD!! We can now demonstrate FLEX to Si!
+## shut down the robot using the learning pendant
+1. Press 'STOP' (square symbol) to stop the driver. 
+2. press 'file' -> 'exit'
+3. Press "shut down robot"
 
-
-Later!!
-
+That's all the demo! Thank you!
 
 
 # Code structure
